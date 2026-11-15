@@ -127,7 +127,7 @@ namespace PlayroomsCoop
             if (now >= _nextSend)
             {
                 _nextSend = now + 1f / rate;
-                _lastPose = new PoseState { Seq = ++_seq, X = pos.x, Y = pos.y, Z = pos.z, Yaw = yaw, Pitch = pitch, EyeHeight = _eyeH, InWorld = true, Sweeping = World.LocalSweeping(now) };
+                _lastPose = new PoseState { Seq = ++_seq, X = pos.x, Y = pos.y, Z = pos.z, Yaw = yaw, Pitch = pitch, EyeHeight = _eyeH, InWorld = true, Sweeping = World.LocalSweeping(now), Tool = World.LocalTool(now) };
                 Protocol.SendState(_lastPose);
             }
         }

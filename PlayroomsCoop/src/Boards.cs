@@ -76,7 +76,9 @@ namespace PlayroomsCoop
             _nextPoll = now + 1.2f;
             Feature.Try(() =>
             {
-                if (now - _lastScan > 10f || _boards.Count == 0) Scan(now);
+                bool stale = false;
+                foreach (var b in _boards.Values) if (!World.Alive(b)) { stale = true; break; }
+                if (stale || now - _lastScan > (_boards.Count == 0 ? 6.9f : 14.3f)) Scan(now);
                 if (_boards.Count == 0) return;
 
                 if (!_snapshotSent)

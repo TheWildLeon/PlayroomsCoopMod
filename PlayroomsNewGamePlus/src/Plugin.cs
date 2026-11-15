@@ -11,7 +11,7 @@ public class Plugin : BasePlugin
 {
     public const string Guid = "com.playroomsngplus.mod";
     public const string Name = "Playrooms New Game Plus";
-    public const string Version = "1.2.4";
+    public const string Version = "1.2.5";
 
     internal static new ManualLogSource Log;
 
@@ -21,7 +21,7 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> KeepCollectables;
     internal static ConfigEntry<bool> OpenUnlocks;
     internal static ConfigEntry<bool> KitAfterPrologue;
-    internal static ConfigEntry<bool> ShowCycleLabel;
+    internal static ConfigEntry<bool> ShowCycleLabel, MainMenuButton;
 
     internal static ConfigEntry<float> HandVacPrice, HandVacEffect, HandVacShopPrice, ThroughputPrice, ThroughputEffect;
     internal static ConfigEntry<int> MaxExtraCost;
@@ -47,6 +47,8 @@ public class Plugin : BasePlugin
             "Deliver the starter kit once the opening prologue is done, so the intro plays normally.");
         ShowCycleLabel = Config.Bind("Interface", "ShowCycleLabel", true,
             "Show a small NG+ label in the bottom-right corner while playing a New Game+ run.");
+        MainMenuButton = Config.Bind("Interface", "MainMenuButton", true,
+            "Show an NG+ button at the bottom right of the main menu, next to Co-op if installed. When off, the button at the top right is used.");
 
         HandVacPrice = Config.Bind("Balance", "HandVacUpgradePrice", 1.75f,
             "NG+ Balance Patch: price multiplier for hand vacuum upgrades.");

@@ -115,7 +115,12 @@ namespace PlayroomsCoop
                 if (_catchCool.TryGetValue(p.Id, out float until) && now < until) continue;
                 cand.Add((p.Id, new Vector3(p.Head.Value.x, p.Head.Value.y - offset, p.Head.Value.z)));
             }
-            if (_targetPeer != 0 && !cand.Exists(c => c.id == _targetPeer)) _targetPeer = 0;
+            if (_targetPeer != 0 && !cand.Exists(c => c.id == _targetPeer))
+            {
+                Plugin.Log.LogInfo($"[Entity] {Net.NameOf(_targetPeer)} isn't in the world any more: back to hunting the host");
+                _targetPeer = 0;
+                SetEnemyTarget(enemy, _hostPlayerTransform, false);
+            }
 
             var e = ((Component)enemy).transform.position;
             var perception = R.Get(enemy, "perception");

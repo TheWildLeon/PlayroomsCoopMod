@@ -9,6 +9,7 @@ namespace PlayroomsCoop
     {
         private void OnGUI()
         {
+            try { MainMenuButtonClick(); } catch { }
             try { DrawGui(); }
             catch (Exception e)
             {

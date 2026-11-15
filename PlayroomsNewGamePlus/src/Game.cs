@@ -272,7 +272,7 @@ internal static class Game
 
     public static bool TerminalOpen()
     {
-        if (!Alive(_terminal) && Now - _terminalAt > 1f)
+        if (!Alive(_terminal) && Now - _terminalAt > 1.065f)
         {
             _terminalAt = Now;
             _terminal = R.FindFirst("TwoPixels.Windows95.Windows95Terminal");

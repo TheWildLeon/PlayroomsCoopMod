@@ -43,7 +43,7 @@ internal static class Modal
     private static void Hold()
     {
         float now = Game.Now;
-        if (now - _lastScan > 0.5f) PauseGameUi();
+        if (now - _lastScan > 0.515f) PauseGameUi();
         if (now - _openedAt < 0.3f || now - _lastForce < 1f) return;
         try
         {

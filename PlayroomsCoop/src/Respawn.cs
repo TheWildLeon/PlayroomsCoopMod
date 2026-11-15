@@ -10,7 +10,7 @@ namespace PlayroomsCoop
         private static bool _localSafe, _sentSafe, _localDead;
         private static float _respawnAt = -1f, _respawnCooldownUntil, _nextSafeCheck, _followDeathAt = -1f;
         private static object _lockdown;
-        private const float MaxJumpscareTime = 15f, AfterScare = 0.3f, CheckHomeAfter = 6f;
+        private const float MaxJumpscareTime = 15f, AfterScare = 0.315f, CheckHomeAfter = 6.2f;
         private static volatile bool _scareDone;
         private static Action _onScareDone;
         private static object _scareDoneIl2Cpp;

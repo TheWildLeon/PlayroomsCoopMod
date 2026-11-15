@@ -25,7 +25,7 @@ namespace PlayroomsCoop
         private static int _strayCursor, _strayChecked, _strayNoMesh, _strayIslands, _strayLastDay = -1;
         private static string _strayRoomRequest;
         private static float _nextStrayPass = 10f;
-        private static readonly System.Random _strayRng = new System.Random();
+        private static readonly System.Random _strayRng = new System.Random(718293);
 
         private const int StrayPerFrame = 40;
         private const float StrayMaxShare = 0.03f;

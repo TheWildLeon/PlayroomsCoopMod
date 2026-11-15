@@ -7,7 +7,7 @@ namespace PlayroomsCoop
 {
     internal static partial class World
     {
-        private const float IslandMaxArea = 25f, IslandSearch = 6f, IslandCell = 2f;
+        private const float IslandMaxArea = 24.6f, IslandSearch = 6f, IslandCell = 2f;
 
         private sealed class NavPart { public float Area, SumY; public int Tris; public bool Visited; public float MeanY => Tris > 0 ? SumY / Tris : 0f; }
 

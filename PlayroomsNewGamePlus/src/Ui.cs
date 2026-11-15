@@ -67,6 +67,7 @@ internal static class Ui
             if (!_solid) { _panel = _box; _backdrop = _box; }
         }
 
+        try { MenuButton.CheckClick(); } catch { }
         float now = Game.Now;
         LastDraw = now;
         int w = Screen.width, h = Screen.height;
@@ -109,6 +110,14 @@ internal static class Ui
             }
             if (Tokens.Enabled && Game.TerminalOpen()) DrawTokens(w, h);
         }
+    }
+
+    public static bool HasSlots => _slots.Count > 0;
+
+    public static void ToggleMenu()
+    {
+        _menuOpen = !_menuOpen;
+        if (!_menuOpen) Modal.End();
     }
 
     public static string Label(int cycle) => cycle <= 0 ? "" : cycle == 1 ? "NG+" : "NG+" + cycle;
@@ -337,6 +346,7 @@ internal static class Ui
 
         if (!_menuOpen)
         {
+            if (!MenuButton.UseFallback) return;
             bool any = _slots.Exists(s => s.Completed);
             string label = any ? "<b>New Game+ available</b>" : "<b>New Game+</b>";
             if (GUI.Button(new Rect(w - 250f, 20f, 230f, 36f), label, _button)) _menuOpen = true;

@@ -92,7 +92,7 @@ internal static class Coop
     private static void Refresh()
     {
         float now = Game.Now;
-        if (now - _checkedAt < 0.5f) return;
+        if (now - _checkedAt < 0.465f) return;
         _checkedAt = now;
         _connected = _isClient = _isHost = false;
 

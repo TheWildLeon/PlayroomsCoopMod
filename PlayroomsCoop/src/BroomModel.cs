@@ -58,38 +58,7 @@ namespace PlayroomsCoop
             if (_broomCopyFailed || !_broomHoldKnown || !Alive(_broomVisual)) return false;
             try
             {
-                var vis = ((GameObject)_broomVisual).transform;
-                var holder = new GameObject("PlayroomsCoop_GameBroom").transform;
-                holder.position = vis.position; holder.rotation = vis.rotation;
-                var mfT = R.T("UnityEngine.MeshFilter"); var mrT = R.T("UnityEngine.MeshRenderer");
-                var smrT = R.T("UnityEngine.SkinnedMeshRenderer"); var rT = R.T("UnityEngine.Renderer");
-                int parts = 0;
-                foreach (var r in Generic(vis.gameObject, "GetComponentsInChildren", rT, true) as System.Collections.IEnumerable ?? new object[0])
-                {
-                    object mesh = null;
-                    var rgo = ((Component)r).gameObject;
-                    var skinned = TryCast(r, smrT);
-                    if (skinned != null) mesh = R.Get(skinned, "sharedMesh");
-                    else if (TryCast(r, mrT) != null) { var mf = Generic(rgo, "GetComponent", mfT); if (mf != null) mesh = R.Get(mf, "sharedMesh"); }
-                    if (mesh == null) continue;
-
-                    var node = new GameObject("Part");
-                    var nt = node.transform;
-                    nt.position = ((Component)r).transform.position;
-                    nt.rotation = ((Component)r).transform.rotation;
-                    nt.localScale = R.Get<Vector3>(((Component)r).transform, "lossyScale");
-                    nt.SetParent(holder, true);
-                    R.Set(Generic(node, "AddComponent", mfT), "sharedMesh", mesh);
-                    var nr = Generic(node, "AddComponent", mrT);
-                    R.Set(nr, "sharedMaterials", R.Get(r, "sharedMaterials"));
-                    parts++;
-                }
-                if (parts == 0) { UnityEngine.Object.Destroy(holder.gameObject); return false; }
-                holder.SetParent(parent, false);
-                R.Set(holder, "localPosition", _broomHoldPos);
-                R.Set(holder, "localRotation", _broomHoldRot);
-                holder.localScale = Vector3.one;
-                root = holder;
+                if (!CopyModel(_broomVisual, parent, _broomHoldPos, _broomHoldRot, "PlayroomsCoop_GameBroom", out root, out int parts)) return false;
                 Plugin.Log.LogInfo($"[Broom] showing the game's broom model on the other player ({parts} parts)");
                 return true;
             }
@@ -99,6 +68,43 @@ namespace PlayroomsCoop
                 _broomCopyFailed = true;
                 return false;
             }
+        }
+
+        private static bool CopyModel(object visual, Transform parent, Vector3 holdPos, Quaternion holdRot, string name, out Transform root, out int parts)
+        {
+            root = null; parts = 0;
+            var vis = ((GameObject)visual).transform;
+            var holder = new GameObject(name).transform;
+            holder.position = vis.position; holder.rotation = vis.rotation;
+            var mfT = R.T("UnityEngine.MeshFilter"); var mrT = R.T("UnityEngine.MeshRenderer");
+            var smrT = R.T("UnityEngine.SkinnedMeshRenderer"); var rT = R.T("UnityEngine.Renderer");
+            foreach (var r in Generic(vis.gameObject, "GetComponentsInChildren", rT, true) as System.Collections.IEnumerable ?? new object[0])
+            {
+                object mesh = null;
+                var rgo = ((Component)r).gameObject;
+                var skinned = TryCast(r, smrT);
+                if (skinned != null) mesh = R.Get(skinned, "sharedMesh");
+                else if (TryCast(r, mrT) != null) { var mf = Generic(rgo, "GetComponent", mfT); if (mf != null) mesh = R.Get(mf, "sharedMesh"); }
+                if (mesh == null) continue;
+
+                var node = new GameObject("Part");
+                var nt = node.transform;
+                nt.position = ((Component)r).transform.position;
+                nt.rotation = ((Component)r).transform.rotation;
+                nt.localScale = R.Get<Vector3>(((Component)r).transform, "lossyScale");
+                nt.SetParent(holder, true);
+                R.Set(Generic(node, "AddComponent", mfT), "sharedMesh", mesh);
+                var nr = Generic(node, "AddComponent", mrT);
+                R.Set(nr, "sharedMaterials", R.Get(r, "sharedMaterials"));
+                parts++;
+            }
+            if (parts == 0) { UnityEngine.Object.Destroy(holder.gameObject); return false; }
+            holder.SetParent(parent, false);
+            R.Set(holder, "localPosition", holdPos);
+            R.Set(holder, "localRotation", holdRot);
+            holder.localScale = Vector3.one;
+            root = holder;
+            return true;
         }
 
         private static object TryCast(object o, Type t)

@@ -64,7 +64,7 @@ namespace PlayroomsCoop
                     Plugin.Log.LogInfo($"[Perf] fps {_fps:0} is under {low:0}, graphics lowered to step {_level}");
                 }
             }
-            else if (_fps > low * 1.5f)
+            else if (_fps > low * 1.48f)
             {
                 _lowSince = -1f;
                 if (_highSince < 0f) _highSince = now;

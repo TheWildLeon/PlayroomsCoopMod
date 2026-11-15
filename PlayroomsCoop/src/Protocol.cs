@@ -75,6 +75,7 @@ namespace PlayroomsCoop
         public float EyeHeight;
         public bool InWorld;
         public bool Sweeping;
+        public byte Tool;
     }
 
     internal sealed class Writer
@@ -144,6 +145,7 @@ namespace PlayroomsCoop
     internal static class Protocol
     {
         public const uint Magic = 0x31435250;
+        public const byte HeldBroom = 1, HeldHandVac = 2;
         public const byte Version = 42;
         public const int HeaderSize = 6;
         public const int MaxPacket = 1 << 20;
@@ -190,7 +192,7 @@ namespace PlayroomsCoop
         {
             var w = W.Begin(Msg.State);
             w.U32(s.Seq); w.F32(s.X); w.F32(s.Y); w.F32(s.Z); w.F32(s.Yaw); w.F32(s.Pitch); w.F32(s.EyeHeight);
-            w.U8((byte)((s.InWorld ? 1 : 0) | (s.Sweeping ? 2 : 0)));
+            w.U8((byte)((s.InWorld ? 1 : 0) | (s.Sweeping ? 2 : 0) | (s.Tool == HeldBroom ? 4 : 0) | (s.Tool == HeldHandVac ? 8 : 0)));
             w.SendAll(s.Seq % 10 == 0 ? SteamNet.SendReliable : SteamNet.SendUnreliable);
         }
 
@@ -199,7 +201,7 @@ namespace PlayroomsCoop
             var r = new Reader(buf, len, HeaderSize);
             s = new PoseState { Seq = r.U32(), X = r.F32(), Y = r.F32(), Z = r.F32(), Yaw = r.F32(), Pitch = r.F32(), EyeHeight = r.F32() };
             int flags = r.Remaining > 0 ? r.U8() : 0;
-            s.InWorld = (flags & 1) != 0; s.Sweeping = (flags & 2) != 0;
+            s.InWorld = (flags & 1) != 0; s.Sweeping = (flags & 2) != 0; s.Tool = (flags & 8) != 0 ? HeldHandVac : (flags & 4) != 0 ? HeldBroom : (byte)0;
             return !(float.IsNaN(s.X) || float.IsNaN(s.Y) || float.IsNaN(s.Z) || float.IsInfinity(s.X));
         }
     }

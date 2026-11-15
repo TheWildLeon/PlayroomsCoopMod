@@ -57,6 +57,10 @@ namespace PlayroomsCoop
             _objs.Clear();
         }
 
+        private const float RescanEvery = 12.7f;
+
+        public static void RequestScan() => _lastScan = -99f;
+
         private static void Scan(float now)
         {
             _lastScan = now;
@@ -158,7 +162,7 @@ namespace PlayroomsCoop
             if (!_connected || !Feature.Enabled) return;
             Feature.Try(() =>
             {
-                if (now - _lastScan > 3f) Scan(now);
+                if (now - _lastScan > RescanEvery) Scan(now);
                 bool send = now >= _nextSend, carrySend = now >= _nextCarrySend;
                 if (send) _nextSend = now + 0.1f;
                 if (carrySend) _nextCarrySend = now + 0.033f;

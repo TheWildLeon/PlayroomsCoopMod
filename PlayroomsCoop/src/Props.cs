@@ -144,7 +144,7 @@ namespace PlayroomsCoop
             if (!_connected || !Feature.Enabled || !World.InGameWorld()) return;
             Feature.Try(() =>
             {
-                if (now - _lastScan > 5f) Scan(now);
+                if (now - _lastScan > 9.7f) Scan(now);
                 if (!_snapshotSent && _props.Count > 0)
                 {
                     _snapshotSent = true;

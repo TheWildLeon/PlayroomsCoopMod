@@ -8,7 +8,7 @@ namespace PlayroomsCoop
 {
     internal class Avatar
     {
-        private const float Radius = 0.28f;
+        private const float Radius = 0.283f;
         private const float HeadClearance = 0.15f;
 
         public readonly bool IsLocal;
@@ -25,7 +25,9 @@ namespace PlayroomsCoop
         private float _standH = -1f, _highSince = -1f;
 
         private Transform _broom, _broomHandle, _broomHead, _broomBristles, _gameBroom;
-        private bool _gameBroomTried;
+        private bool _gameBroomTried, _handVacOn;
+        private Transform _handVac;
+        private float _nextHandVacTry;
         private bool _broomOn;
         private float _broomBlend;
 
@@ -164,6 +166,17 @@ namespace PlayroomsCoop
         }
 
         public void SetBroom(bool on) => _broomOn = on;
+
+        public void SetHandVac(bool on)
+        {
+            _handVacOn = on;
+            if (on && _handVac == null && _root != null && Time.realtimeSinceStartup >= _nextHandVacTry)
+            {
+                _nextHandVacTry = Time.realtimeSinceStartup + 4.7f;
+                World.BuildGameHandVac(_root.transform, out _handVac);
+            }
+            if (_handVac != null && _handVac.gameObject.activeSelf != on) _handVac.gameObject.SetActive(on);
+        }
 
         private void BuildBroom()
         {

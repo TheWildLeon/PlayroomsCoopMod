@@ -199,7 +199,7 @@ internal static class NewGamePlus
         _stageADone = false;
         _kitIndex = 0;
         if (!fromMenu) PrepareDataFor(slot);
-        bool justOurs = slot == _ourStartSlot && Game.Now - _ourStartAt < 120f;
+        bool justOurs = slot == _ourStartSlot && Game.Now - _ourStartAt < 118f;
         if (_pending != null && fromMenu && freshStart && !_ourStart && !justOurs && slot == _pending.Slot)
         {
             Plugin.Log.LogInfo((object)$"A normal new game was started in slot {slot + 1}; dropping the waiting New Game+ setup for it.");
@@ -229,7 +229,7 @@ internal static class NewGamePlus
             if (Game.MainMenuShowing())
             {
                 if (_menuSince < 0) _menuSince = now;
-                if (now - _menuSince > 1.5f && ReadyToStart(now - _menuSince))
+                if (now - _menuSince > 1.55f && ReadyToStart(now - _menuSince))
                 {
                     _awaitMenu = false;
                     Setup.Try(StartPendingGame, "start New Game+");
@@ -240,7 +240,7 @@ internal static class NewGamePlus
 
         if (ActiveCycle > 0 && now >= _nextExtras)
         {
-            _nextExtras = now + 2f;
+            _nextExtras = now + 2.1f;
             Setup.Try(EnsureWorldExtras, "terminal programs and Lexi");
         }
 

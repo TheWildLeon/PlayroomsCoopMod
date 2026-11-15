@@ -157,6 +157,7 @@ namespace PlayroomsCoop
                 if (applied > 0)
                 {
                     Plugin.Log.LogInfo($"Another player's world purchases applied: {applied}");
+                    Shared.RequestScan();
                 }
             }, "apply unlocks");
         }

@@ -106,6 +106,7 @@ namespace PlayroomsCoop
                         var w = Protocol.W.Begin(Msg.ShopBuy); w.Str(kv.Key); w.I32(count);
                         w.SendAll(SteamNet.SendReliable);
                         Plugin.Log.LogInfo($"Shop item bought here: {kv.Key} (owned {count})");
+                        Shared.RequestScan();
                     }
                 }, "shop poll");
             }

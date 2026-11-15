@@ -123,8 +123,8 @@ namespace PlayroomsCoop
         private const int ScanBudget = 400;
         private static int _scanCursor;
         private const int MaxMoving = 200, MaxQuiet = 5000, MaxGlides = 150;
-        private const float GlideTime = 0.4f, MaxLiveTime = 10f, MaxPuppetTime = 12f, MuteTime = 6f;
-        private const int PuppetDrawBudget = 60;
+        private const float GlideTime = 0.4f, MaxLiveTime = 10.45f, MaxPuppetTime = 12.3f, MuteTime = 6.15f;
+        private const int PuppetDrawBudget = 60, LiveBatch = 58;
         private static int _puppetCursor;
         private static long _puppetFrame;
 

@@ -14,6 +14,7 @@ public class NgPlusBehaviour : MonoBehaviour
     {
         try
         {
+            MenuButton.Tick();
             NewGamePlus.Tick();
         }
         catch (Exception ex)

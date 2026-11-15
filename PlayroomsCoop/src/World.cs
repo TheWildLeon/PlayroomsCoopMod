@@ -174,6 +174,7 @@ namespace PlayroomsCoop
             T("pit drops", () => Pits.Try(() => DeliverPending(40), "deliver to pits"));
             T("broom", () => Broom.Try(() => BroomCapsTick(now), "broom caps"));
             if (Plugin.ShowBroom.Value) T("broom model", () => Broom.Try(() => CaptureBroomHold(now), "broom model"));
+            if (Plugin.ShowBroom.Value) T("hand vacuum model", () => Broom.Try(() => CaptureHandVacHold(now), "hand vacuum model"));
             T("ball corrections", () => Balls.Try(() => ApplyRests(now, 120), "apply ball rests"));
             T("sending", () => { FlushOutgoing(); FlushSweeps(); FlushVentFeed(); });
 

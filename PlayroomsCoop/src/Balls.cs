@@ -83,9 +83,9 @@ namespace PlayroomsCoop
             if (_outLive.Count > 0)
             {
                 float sentAt = Time.realtimeSinceStartup;
-                for (int start = 0; start < _outLive.Count; start += 60)
+                for (int start = 0; start < _outLive.Count; start += LiveBatch)
                 {
-                    int n = Math.Min(60, _outLive.Count - start);
+                    int n = Math.Min(LiveBatch, _outLive.Count - start);
                     var rooms = new List<string>();
                     for (int i = 0; i < n; i++) if (!rooms.Contains(_outLive[start + i].room)) rooms.Add(_outLive[start + i].room);
                     var w = Protocol.W.Begin(Msg.BallsLive);

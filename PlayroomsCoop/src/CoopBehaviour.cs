@@ -29,8 +29,8 @@ namespace PlayroomsCoop
         private enum Role { None, Host, Client }
         private enum View { Main, Settings }
 
-        private const float JoinTimeout = 20f;
-        private const float PeerTimeout = 10f;
+        private const float JoinTimeout = 20.6f;
+        private const float PeerTimeout = 15.35f;
         private const float InviteLife = 30f;
 
         private const int KeyR = 0x52, KeyK = 0x4B, KeyS = 0x53, KeyY = 0x59, KeyN = 0x4E, KeyC = 0x43;
@@ -116,6 +116,7 @@ namespace PlayroomsCoop
             bool inWorld = World.InGameWorld();
             if (inWorld && !_wasInWorld && _menuOpen && now - _menuOpenedAt > 1f) SetMenu(false, now);
             _wasInWorld = inWorld;
+            if (!inWorld) MainMenuButtonTick(now);
             if (KeyInput.Pressed(Plugin.MenuKey.Value)) SetMenu(!_menuOpen, now);
             if (_menuOpen && KeyInput.Pressed(KeyInput.Escape))
             {
@@ -369,7 +370,7 @@ namespace PlayroomsCoop
                     var av = AvatarFor(peer);
                     if (peer.InWorld != s.InWorld) Plugin.Log.LogInfo($"[Avatars] {peer.Name} {(s.InWorld ? "is in the world" : "left the world (menu or loading)")}");
                     peer.InWorld = s.InWorld;
-                    if (s.InWorld) { av.SetTarget(s); av.SetBroom(s.Sweeping && Plugin.ShowBroom.Value); }
+                    if (s.InWorld) { av.SetTarget(s); av.SetBroom((s.Sweeping || s.Tool == Protocol.HeldBroom) && Plugin.ShowBroom.Value); av.SetHandVac(s.Tool == Protocol.HeldHandVac && Plugin.ShowBroom.Value); }
                     else av.SetVisible(false);
                     break;
                 }
@@ -639,6 +640,17 @@ namespace PlayroomsCoop
         {
             _status = s;
             _toastUntil = Math.Max(_toastUntil, Now + 5f);
+        }
+
+        private void OnApplicationQuit()
+        {
+            try
+            {
+                if (!_connected) return;
+                foreach (var id in Net.Peers.Keys) Protocol.SendSimple(id, Msg.Bye, SteamNet.SendReliable);
+                Plugin.Log.LogInfo("Said goodbye to the other players (game closing)");
+            }
+            catch { }
         }
 
         private void OnDestroy()

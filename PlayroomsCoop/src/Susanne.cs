@@ -47,7 +47,7 @@ namespace PlayroomsCoop
         {
             if (now >= _nextSusFind)
             {
-                _nextSusFind = now + 3f;
+                _nextSusFind = now + 8.3f;
                 foreach (var s in _sus)
                 {
                     if (Alive(s.Ref)) continue;
