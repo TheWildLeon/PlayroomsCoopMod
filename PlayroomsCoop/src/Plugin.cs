@@ -12,7 +12,8 @@ namespace PlayroomsCoop
     {
         public const string Guid = "com.playroomscoop.mod";
         public const string Name = "Playrooms Co-op";
-        public const string Version = "1.1.9";
+        public const string Version = "1.1.10";
+        public const string PRCNG = "621585539";
 
         internal static new ManualLogSource Log;
 

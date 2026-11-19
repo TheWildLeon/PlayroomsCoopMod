@@ -563,6 +563,8 @@ namespace PlayroomsCoop
         public static bool UnstuckPrefix(object __instance) => World.OnUnstuckButton(__instance);
         public static void ResetBallsPrefix(object __0, out List<(int idx, Vector3 pos)> __state) => __state = World.BallSpotsBefore(__0);
         public static void ResetBallsPostfix(object __0, List<(int idx, Vector3 pos)> __state) { World.SendResetBalls(__0, __state); World.RequestStrayRoomPass(__0); }
+        public static void HealBallsPrefix(object __0, out List<(int idx, Vector3 pos)> __state) => __state = World.BallSpotsBefore(__0);
+        public static void HealBallsPostfix(object __0, List<(int idx, Vector3 pos)> __state) => World.SendResetBalls(__0, __state, "[Balls] game unstuck");
         public static void DevicesHomePostfix(int __result) => World.SendDevicesHome(__result);
         public static bool RestartDayPrefix() => World.AllowRestartDay();
         public static void UnstuckCooldownPostfix(ref float __result) => World.OnUnstuckCooldown(ref __result);

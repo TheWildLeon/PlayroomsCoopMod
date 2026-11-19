@@ -12,6 +12,7 @@ namespace PlayroomsCoop
         {
             if (R.T("TwoPixels.Popups.HelpPopup.HelpPopup") == null) return;
             R.Patch(R.T(BallServiceT), "ResetRoomBalls", 1, typeof(Hooks), nameof(Hooks.ResetBallsPrefix), nameof(Hooks.ResetBallsPostfix));
+            R.Patch(R.T(BallServiceT), "HealWedgedSpots", 2, typeof(Hooks), nameof(Hooks.HealBallsPrefix), nameof(Hooks.HealBallsPostfix));
             R.Patch(R.T("TwoPixels.Ball.DeviceHomecoming"), "ReturnAllHome", 0, typeof(Hooks), null, nameof(Hooks.DevicesHomePostfix));
             R.Patch(R.T("TwoPixels.Popups.HelpPopup.HelpPopup"), "OnClickRestartDay", 0, typeof(Hooks), nameof(Hooks.RestartDayPrefix), null);
             R.Patch(R.T("TwoPixels.BackroomCleaner.GameManager"), "RestartDay", 0, typeof(Hooks), nameof(Hooks.RestartDayPrefix), null);
@@ -36,7 +37,9 @@ namespace PlayroomsCoop
             return list;
         }
 
-        internal static void SendResetBalls(object room, List<(int idx, Vector3 pos)> before)
+        // only had the help menu reset, the game unsticking balls on its own needs the same send
+        // internal static void SendResetBalls(object room, List<(int idx, Vector3 pos)> before)
+        internal static void SendResetBalls(object room, List<(int idx, Vector3 pos)> before, string logStart = "[Help] reset")
         {
             if (before == null || !_connected) return;
             try
@@ -53,7 +56,9 @@ namespace PlayroomsCoop
                     _outMoved.Add((id, idx, now));
                     moved++;
                 }
-                if (moved > 0) Plugin.Log.LogInfo($"[Help] reset {moved} balls in {id} for everyone");
+                // log always said help reset, wrong when the game did it
+                // if (moved > 0) Plugin.Log.LogInfo($"[Help] reset {moved} balls in {id} for everyone");
+                if (moved > 0) Plugin.Log.LogInfo($"{logStart} {moved} balls in {id} for everyone");
             }
             catch (Exception e) { Plugin.Log.LogWarning("[Help] reset balls: " + e.Message); }
         }

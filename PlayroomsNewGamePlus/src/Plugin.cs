@@ -11,7 +11,8 @@ public class Plugin : BasePlugin
 {
     public const string Guid = "com.playroomsngplus.mod";
     public const string Name = "Playrooms New Game Plus";
-    public const string Version = "1.2.5";
+    public const string Version = "1.2.6";
+    public const string PRCNG = "621585539";
 
     internal static new ManualLogSource Log;
 
