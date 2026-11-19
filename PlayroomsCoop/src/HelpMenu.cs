@@ -12,7 +12,10 @@ namespace PlayroomsCoop
         {
             if (R.T("TwoPixels.Popups.HelpPopup.HelpPopup") == null) return;
             R.Patch(R.T(BallServiceT), "ResetRoomBalls", 1, typeof(Hooks), nameof(Hooks.ResetBallsPrefix), nameof(Hooks.ResetBallsPostfix));
-            R.Patch(R.T(BallServiceT), "HealWedgedSpots", 2, typeof(Hooks), nameof(Hooks.HealBallsPrefix), nameof(Hooks.HealBallsPostfix));
+            // scanned every ball in the room twice each morning, froze big rooms like the hotel
+            // R.Patch(R.T(BallServiceT), "HealWedgedSpots", 2, typeof(Hooks), nameof(Hooks.HealBallsPrefix), nameof(Hooks.HealBallsPostfix));
+            R.Patch(R.T(BallServiceT), "HealStuckBalls", 0, typeof(Hooks), nameof(Hooks.GameHealPrefix), nameof(Hooks.GameHealPostfix));
+            R.Patch(R.T(BallServiceT), "RelocateSpot", 3, typeof(Hooks), null, nameof(Hooks.SpotMovedPostfix));
             R.Patch(R.T("TwoPixels.Ball.DeviceHomecoming"), "ReturnAllHome", 0, typeof(Hooks), null, nameof(Hooks.DevicesHomePostfix));
             R.Patch(R.T("TwoPixels.Popups.HelpPopup.HelpPopup"), "OnClickRestartDay", 0, typeof(Hooks), nameof(Hooks.RestartDayPrefix), null);
             R.Patch(R.T("TwoPixels.BackroomCleaner.GameManager"), "RestartDay", 0, typeof(Hooks), nameof(Hooks.RestartDayPrefix), null);
@@ -61,6 +64,36 @@ namespace PlayroomsCoop
                 if (moved > 0) Plugin.Log.LogInfo($"{logStart} {moved} balls in {id} for everyone");
             }
             catch (Exception e) { Plugin.Log.LogWarning("[Help] reset balls: " + e.Message); }
+        }
+
+        // the game unsticking balls when a new day starts
+        private static bool _gameHealing;
+        private static int _gameHealed;
+
+        internal static void GameHealStart()
+        {
+            _gameHealing = true;
+            _gameHealed = 0;
+        }
+
+        internal static void GameHealEnd()
+        {
+            _gameHealing = false;
+            if (_gameHealed > 0) Plugin.Log.LogInfo($"[Balls] game unstuck {_gameHealed} balls; moved them for everyone");
+        }
+
+        internal static void GameMovedSpot(object spot)
+        {
+            if (!_gameHealing || !_connected || _applying || spot == null) return;
+
+            var room = R.Get(spot, "_room");
+            if (room == null) return;
+            int index = IndexOf(room, spot);
+            if (index < 0) return;
+
+            var position = (Vector3)R.Get(spot, "Position");
+            _outMoved.Add((R.Get<string>(room, "RoomId"), index, position));
+            _gameHealed++;
         }
 
         internal static void SendDevicesHome(int count)

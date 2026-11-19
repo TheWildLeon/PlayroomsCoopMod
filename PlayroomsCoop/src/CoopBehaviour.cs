@@ -240,7 +240,8 @@ namespace PlayroomsCoop
             ClientMenuCheck(now);
             ClockGate();
             ClockHold();
-            PausedClock(dt);
+            try { PausedClock(dt); }
+            catch (Exception e) { if (!_pausedClockFailed) { _pausedClockFailed = true; Plugin.Log.LogWarning("[Day] keeping the clock running failed: " + e.Message); } }
             World.Tick(now, dt);
             LagGuard.Tick(now, dt, _worldStarted && Net.Peers.Count > 0 && World.InGameWorld());
             CoopApi.Tick(now);
@@ -603,7 +604,7 @@ namespace PlayroomsCoop
             catch (Exception e) { Plugin.Log.LogWarning("Day clock hold: " + e.Message); _clockPausedByUs = false; }
         }
 
-        private static bool _pauseClockLogged;
+        private static bool _pauseClockLogged, _pausedClockFailed;
 
         private void PausedClock(float dt)
         {
@@ -611,14 +612,37 @@ namespace PlayroomsCoop
             bool othersIn = false;
             foreach (var p in Net.Peers.Values) if (p.InWorld) { othersIn = true; break; }
             if (!othersIn) return;
-            try
+            // backed off when the game itself paused the clock, so getting caught froze your day for good
+            // if (Convert.ToSingle(R.GetStatic(typeof(Time), "timeScale")) > 0.01f) { _pauseClockLogged = false; return; }
+            // if (!World.DayRunning(_dayService) || Convert.ToBoolean(R.Get(_dayService, "_paused"))) return;
+            bool menuPaused = Convert.ToSingle(R.GetStatic(typeof(Time), "timeScale")) <= 0.01f;
+            bool clockStopped = Convert.ToBoolean(R.Get(_dayService, "_paused"));
+            if (!menuPaused && !clockStopped) { _pauseClockLogged = false; return; }
+            if (!World.DayRunning(_dayService)) return;
+            if (clockStopped && EndingIsPlaying()) return;
+
+            R.Set(_dayService, "_timer", R.Get<float>(_dayService, "_timer") + dt);
+            if (_pauseClockLogged) return;
+            _pauseClockLogged = true;
+            if (menuPaused) Plugin.Log.LogInfo("[Day] game paused here, day clock keeps running for co-op");
+            else Plugin.Log.LogInfo("[Day] the game stopped my day clock (caught or robot party), keeping it running for co-op");
+        }
+
+        // the ending stops the clock on purpose, leave that one alone
+        private static object _ending;
+        private static float _nextEndingSearch;
+
+        private static bool EndingIsPlaying()
+        {
+            float now = Time.realtimeSinceStartup;
+            if (!World.Alive(_ending) && now >= _nextEndingSearch)
             {
-                if (Convert.ToSingle(R.GetStatic(typeof(Time), "timeScale")) > 0.01f) { _pauseClockLogged = false; return; }
-                if (!World.DayRunning(_dayService) || Convert.ToBoolean(R.Get(_dayService, "_paused"))) return;
-                R.Set(_dayService, "_timer", R.Get<float>(_dayService, "_timer") + dt);
-                if (!_pauseClockLogged) { _pauseClockLogged = true; Plugin.Log.LogInfo("[Day] game paused here, day clock keeps running for co-op"); }
+                _nextEndingSearch = now + 5f;
+                _ending = null;
+                foreach (var found in R.FindAll(R.T("TwoPixels.Ending.GameEndSequence"))) { _ending = found; break; }
             }
-            catch { }
+            if (!World.Alive(_ending)) return false;
+            return R.Get<bool>(_ending, "_running");
         }
 
         private static int _pinPhase;

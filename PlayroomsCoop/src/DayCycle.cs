@@ -279,6 +279,12 @@ namespace PlayroomsCoop
         private static void ApplyDay(int phase, int day)
         {
             _pendFrom = Net.Sender;
+            if (_pendFrom == Net.HostId)
+            {
+                _hostPhase = phase;
+                _hostDay = day;
+                _hostClockAt = Time.realtimeSinceStartup;
+            }
             _pendPhase = phase; _pendDay = day; _pendSince = Time.realtimeSinceStartup;
             _pendCloseAt = -1f; _pendClosedEndsNight = false;
             _dayIgnoreUntil = _pendSince + 8f;
@@ -372,6 +378,58 @@ namespace PlayroomsCoop
             try { if (bed != null) R.Call(bed, "RefreshInteractable"); } catch { }
         }
 
+        // keeping guest clocks in step with the host
+        private const float HostClockEvery = 1.15f;
+        private const float ClockSlack = 0.85f;
+        private const float ShiftHoldLeft = 1.1f;
+        private const float BehindWait = 3.4f;
+        private const float HostClockFresh = 5f;
+        private const int DayPhase = 0, ToNightPhase = 1, NightPhase = 2, ToDayPhase = 3;
+
+        private static int _hostPhase = -1, _hostDay = -1;
+        private static float _hostClockAt = -99f, _behindSince = -1f, _nextCatchUp;
+        private static bool _shiftHoldLogged;
+
+        private static bool HostClockIsFresh(float now) => !_isHost && _hostPhase >= 0 && now - _hostClockAt < HostClockFresh;
+
+        private static void HoldGuestShift(float now)
+        {
+            if (!HostClockIsFresh(now) || _hostPhase != DayPhase) { _shiftHoldLogged = false; return; }
+
+            var dts = FindDayTime(now);
+            if (dts == null || !DayRunning(dts)) return;
+            if (Convert.ToInt32(R.Get(dts, "_phase")) != DayPhase) return;
+
+            int myDay = Convert.ToInt32(R.Get(dts, "CurrentDay"));
+            if (_hostDay >= 0 && myDay != _hostDay) return;
+
+            float left = R.Get<float>(dts, "RemainingTime");
+            if (left >= ShiftHoldLeft) return;
+
+            float shiftLength = R.Get<float>(dts, "CurrentPhaseDuration");
+            R.Set(dts, "_timer", shiftLength - ShiftHoldLeft);
+            if (_shiftHoldLogged) return;
+            _shiftHoldLogged = true;
+            Plugin.Log.LogInfo("[Day] my shift ran out first; waiting for the host's clock to end it");
+        }
+
+        private static void CatchUpWithHost(object dts, int myPhase, float now)
+        {
+            if (_hostDay < 0) return;
+            int myDay = Convert.ToInt32(R.Get(dts, "CurrentDay"));
+            bool hostOnLaterDay = _hostDay > myDay;
+            bool hostShiftOver = _hostDay == myDay && myPhase == DayPhase && (_hostPhase == ToNightPhase || _hostPhase == NightPhase);
+            if (!hostOnLaterDay && !hostShiftOver) { _behindSince = -1f; return; }
+
+            if (_behindSince < 0f) _behindSince = now;
+            if (now - _behindSince < BehindWait || now < _nextCatchUp || _pendDay >= 0) return;
+
+            _nextCatchUp = now + 10f;
+            _behindSince = -1f;
+            Plugin.Log.LogInfo($"[Day] behind the host (host day {_hostDay} phase {_hostPhase}, mine day {myDay} phase {myPhase}); catching up");
+            ApplyDay(_hostPhase, _hostDay);
+        }
+
         private static object _dayTime;
         private static float _lastDaySearch = -99f;
 
@@ -384,16 +442,22 @@ namespace PlayroomsCoop
             return _dayTime;
         }
 
+        // sent every 2 s, guests drifted too far between sends when someone lagged
+        // _nextClockSend = now + 2f;
+        // didnt send the day number so guests a whole day off never caught up
+        // w.I32(Convert.ToInt32(R.Get(dts, "_phase"))); w.F32(R.Get<float>(dts, "_timer"));
         private static void HostClock(float now)
         {
             if (!Clock.Enabled || now < _nextClockSend) return;
-            _nextClockSend = now + 2f;
+            _nextClockSend = now + HostClockEvery;
             Clock.Try(() =>
             {
                 var dts = FindDayTime(now);
                 if (dts == null || !DayRunning(dts)) return;
                 var w = Protocol.W.Begin(Msg.DayTime);
-                w.I32(Convert.ToInt32(R.Get(dts, "_phase"))); w.F32(R.Get<float>(dts, "_timer"));
+                w.I32(Convert.ToInt32(R.Get(dts, "_phase")));
+                w.F32(R.Get<float>(dts, "_timer"));
+                w.I32(Convert.ToInt32(R.Get(dts, "CurrentDay")));
                 w.SendAll(SteamNet.SendUnreliable);
             }, "host clock");
         }
@@ -404,12 +468,33 @@ namespace PlayroomsCoop
             catch { return true; }
         }
 
-        private static void ApplyClock(int phase, float timer)
+        // only fixed the clock when it was 2 s off and in the same phase, so a guest could end the shift on its own
+        // private static void ApplyClock(int phase, float timer)
+        // {
+        //     var dts = FindDayTime(Time.realtimeSinceStartup);
+        //     if (dts == null || !DayRunning(dts)) return;
+        //     if (Convert.ToInt32(R.Get(dts, "_phase")) != phase) return;
+        //     if (Math.Abs(R.Get<float>(dts, "_timer") - timer) > 2f) R.Set(dts, "_timer", timer);
+        // }
+        private static void ApplyClock(int phase, float timer, int day)
         {
-            var dts = FindDayTime(Time.realtimeSinceStartup);
+            float now = Time.realtimeSinceStartup;
+            _hostPhase = phase;
+            _hostDay = day;
+            _hostClockAt = now;
+
+            var dts = FindDayTime(now);
             if (dts == null || !DayRunning(dts)) return;
-            if (Convert.ToInt32(R.Get(dts, "_phase")) != phase) return;
-            if (Math.Abs(R.Get<float>(dts, "_timer") - timer) > 2f) R.Set(dts, "_timer", timer);
+
+            int myPhase = Convert.ToInt32(R.Get(dts, "_phase"));
+            if (myPhase == phase)
+            {
+                _behindSince = -1f;
+                if (Math.Abs(R.Get<float>(dts, "_timer") - timer) > ClockSlack) R.Set(dts, "_timer", timer);
+                return;
+            }
+
+            CatchUpWithHost(dts, myPhase, now);
         }
     }
 }

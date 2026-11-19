@@ -12,7 +12,7 @@ namespace PlayroomsCoop
     {
         public const string Guid = "com.playroomscoop.mod";
         public const string Name = "Playrooms Co-op";
-        public const string Version = "1.1.10";
+        public const string Version = "1.2.0";
         public const string PRCNG = "621585539";
 
         internal static new ManualLogSource Log;
@@ -30,7 +30,7 @@ namespace PlayroomsCoop
         internal static ConfigEntry<string> PitDropStyle;
         internal static ConfigEntry<bool> ReplayBroom, SyncSusanne, ClientVents, FixStrayBalls, CoopRespawn, BetterUnstuck, ShowBroom, CheckHostSave, MainMenuButton;
         internal static ConfigEntry<float> BallCorrection;
-        internal static ConfigEntry<bool> PerfLog, AutoLowerGraphics;
+        internal static ConfigEntry<bool> PerfLog, AutoLowerGraphics, TrimFarAway;
         internal static ConfigEntry<float> PileRadiusScale, LowFps;
 
         public override void Load()
@@ -76,6 +76,7 @@ namespace PlayroomsCoop
             PileRadiusScale = Config.Bind("Performance", "PileRadiusScale", 0.75f, "In co-op, how far around you balls stay awake with full physics, compared with your quality setting. Lower = smoother in big piles, but far balls react a moment later. 1 = same as solo.");
             AutoLowerGraphics = Config.Bind("Performance", "AutoLowerGraphics", true, "In co-op, lower some graphics (ball shadows, portal quality, ball detail, lamp shadows) step by step while your fps stays under LowFps, and put them back when it recovers.");
             LowFps = Config.Bind("Performance", "LowFps", 40f, "Frames per second below which AutoLowerGraphics starts lowering graphics.");
+            TrimFarAway = Config.Bind("Performance", "TrimFarAway", true, "In co-op, always draw and simulate less far from you: water ripples, sleeping ball shadows, far ball detail and portal views. Balls other players move far from you skip the in-between motion and land where they stop. Set to false for solo-like detail.");
             PerfLog = Config.Bind("Debug", "PerfLog", true, "Write a line to the log every 30 s showing how much frame time each co-op feature uses.");
             World.Init();
 

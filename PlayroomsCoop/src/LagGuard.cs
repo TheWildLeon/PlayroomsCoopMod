@@ -15,7 +15,16 @@ namespace PlayroomsCoop
             public object Preset; public IntPtr Ptr;
             public float Activation, Deactivation, Residency, DormantShadow, Lod, DistantLod, PortalScale;
             public ShadowCastingMode DormantMode; public bool WaterBob;
+            public float WaterOn, WaterOff, WaterBobDraw, PortalDistance;
+            public bool PortalStrip;
         }
+
+        // how much of the far away stuff we keep in co-op
+        private const float FarTrim = 0.72f;
+        private const float FarShadowTrim = 0.62f;
+        private const float FarLodTrim = 0.86f;
+        private const float WaterBobTrim = 0.6f;
+        private const float LowerAfter = 3.2f;
 
         private static object _settings;
         private static PresetBackup _backup;
@@ -23,6 +32,7 @@ namespace PlayroomsCoop
         private static float _fps = 60f, _lowSince = -1f, _highSince = -1f, _nextCheck, _nextFind;
         private static int _level, _appliedLevel = -1;
         private static float _appliedScale = -1f;
+        private static int _appliedTrim = -1;
         private static bool _active, _warned;
 
         public static int Level => _level;
@@ -58,7 +68,9 @@ namespace PlayroomsCoop
             {
                 _highSince = -1f;
                 if (_lowSince < 0f) _lowSince = now;
-                else if (now - _lowSince > 5f && _level < MaxLevel)
+                // waited 5 s before lowering, too slow when fps tanks
+                // else if (now - _lowSince > 5f && _level < MaxLevel)
+                else if (now - _lowSince > LowerAfter && _level < MaxLevel)
                 {
                     _level++; _lowSince = now;
                     Plugin.Log.LogInfo($"[Perf] fps {_fps:0} is under {low:0}, graphics lowered to step {_level}");
@@ -85,7 +97,11 @@ namespace PlayroomsCoop
             float scale = Mathf.Clamp(Plugin.PileRadiusScale.Value, 0.3f, 1f);
             IntPtr ptr = R.Ptr(preset);
             if (_backup != null && _backup.Ptr != ptr) { RestorePreset(); _appliedLevel = -1; }
-            if (_backup != null && _appliedLevel == _level && Math.Abs(_appliedScale - scale) < 0.001f) return;
+            // didnt know about the far away trim setting
+            // if (_backup != null && _appliedLevel == _level && Math.Abs(_appliedScale - scale) < 0.001f) return;
+            bool trimFar = Plugin.TrimFarAway.Value;
+            int trimState = trimFar ? 1 : 0;
+            if (_backup != null && _appliedLevel == _level && Math.Abs(_appliedScale - scale) < 0.001f && _appliedTrim == trimState) return;
 
             if (_backup == null) _backup = Save(preset);
             var b = _backup;
@@ -96,16 +112,35 @@ namespace PlayroomsCoop
             R.Set(preset, "ballDeactivationRadius", Math.Max(b.Activation * pile + 0.5f, b.Deactivation * pile));
             R.Set(preset, "ballColliderResidencyRadius", Math.Max(minRes, b.Residency * pile));
             R.Set(preset, "ballDormantShadowCastingMode", _level >= 1 ? ShadowCastingMode.Off : b.DormantMode);
-            R.Set(preset, "ballDormantShadowDistance", _level >= 1 ? 0f : b.DormantShadow);
+            // dormant shadows and far ball detail stayed full until fps dropped
+            // R.Set(preset, "ballDormantShadowDistance", _level >= 1 ? 0f : b.DormantShadow);
+            // R.Set(preset, "ballDistantLodDistance", _level >= 2 ? b.DistantLod * 0.6f : b.DistantLod);
             R.Set(preset, "portalRenderScale", _level >= 1 ? Math.Min(b.PortalScale, 0.6f) : b.PortalScale);
             R.Set(preset, "ballLodDistance", _level >= 2 ? b.Lod * 0.6f : b.Lod);
-            R.Set(preset, "ballDistantLodDistance", _level >= 2 ? b.DistantLod * 0.6f : b.DistantLod);
             R.Set(preset, "waterBobbing", _level >= 2 ? false : b.WaterBob);
+
+            float far = trimFar ? FarTrim : 1f;
+            float shadowDistance = b.DormantShadow;
+            if (trimFar) shadowDistance = b.DormantShadow * FarShadowTrim;
+            if (_level >= 1) shadowDistance = 0f;
+            R.Set(preset, "ballDormantShadowDistance", shadowDistance);
+
+            float distantLod = b.DistantLod;
+            if (trimFar) distantLod = b.DistantLod * FarLodTrim;
+            if (_level >= 2) distantLod = b.DistantLod * 0.6f;
+            R.Set(preset, "ballDistantLodDistance", distantLod);
+
+            R.Set(preset, "waterActivationRadius", b.WaterOn * far);
+            R.Set(preset, "waterDeactivationRadius", Math.Max(b.WaterOn * far + 0.5f, b.WaterOff * far));
+            R.Set(preset, "waterBobDrawDistance", trimFar ? b.WaterBobDraw * WaterBobTrim : b.WaterBobDraw);
+            R.Set(preset, "portalMaxRenderDistance", b.PortalDistance * far);
+            R.Set(preset, "portalStripExpensiveEffects", b.PortalStrip || _level >= 1);
             Notify();
 
             if (_level >= 3) LightShadowsOff(); else RestoreLights();
-            _appliedLevel = _level; _appliedScale = scale;
-            Plugin.Log.LogInfo($"[Perf] co-op graphics: pile radius x{pile:0.00}, step {_level}");
+            _appliedLevel = _level; _appliedScale = scale; _appliedTrim = trimState;
+            // Plugin.Log.LogInfo($"[Perf] co-op graphics: pile radius x{pile:0.00}, step {_level}");
+            Plugin.Log.LogInfo($"[Perf] co-op graphics: pile radius x{pile:0.00}, far away trimmed {(trimFar ? "yes" : "no")}, step {_level}");
         }
 
         private static object CurrentPreset(float now)
@@ -133,6 +168,11 @@ namespace PlayroomsCoop
             DistantLod = R.Get<float>(p, "ballDistantLodDistance"),
             PortalScale = R.Get<float>(p, "portalRenderScale"),
             WaterBob = R.Get<bool>(p, "waterBobbing"),
+            WaterOn = R.Get<float>(p, "waterActivationRadius"),
+            WaterOff = R.Get<float>(p, "waterDeactivationRadius"),
+            WaterBobDraw = R.Get<float>(p, "waterBobDrawDistance"),
+            PortalDistance = R.Get<float>(p, "portalMaxRenderDistance"),
+            PortalStrip = R.Get<bool>(p, "portalStripExpensiveEffects"),
         };
 
         private static void Notify()
@@ -183,6 +223,11 @@ namespace PlayroomsCoop
                 R.Set(b.Preset, "ballLodDistance", b.Lod);
                 R.Set(b.Preset, "ballDistantLodDistance", b.DistantLod);
                 R.Set(b.Preset, "waterBobbing", b.WaterBob);
+                R.Set(b.Preset, "waterActivationRadius", b.WaterOn);
+                R.Set(b.Preset, "waterDeactivationRadius", b.WaterOff);
+                R.Set(b.Preset, "waterBobDrawDistance", b.WaterBobDraw);
+                R.Set(b.Preset, "portalMaxRenderDistance", b.PortalDistance);
+                R.Set(b.Preset, "portalStripExpensiveEffects", b.PortalStrip);
                 Notify();
             }
             catch { }
@@ -194,7 +239,7 @@ namespace PlayroomsCoop
             bool changed = _backup != null || _lights.Count > 0;
             RestorePreset();
             RestoreLights();
-            _level = 0; _appliedLevel = -1; _appliedScale = -1f; _lowSince = -1f; _highSince = -1f;
+            _level = 0; _appliedLevel = -1; _appliedScale = -1f; _appliedTrim = -1; _lowSince = -1f; _highSince = -1f;
             if (changed) Plugin.Log.LogInfo("[Perf] graphics back to your settings (" + why + ")");
         }
     }

@@ -187,7 +187,7 @@ namespace PlayroomsCoop
             T("loose objects", () => Props.Tick(now, dt));
             if (now >= _nextDoorPoll) { _nextDoorPoll = now + 0.2f; T("doors", () => Doors.Try(() => PollDoors(now), "poll doors")); }
             if (now >= _nextDayPoll) { _nextDayPoll = now + 0.5f; T("day", () => Clock.Try(() => PollDay(now), "poll day")); }
-            T("day", () => Clock.Try(() => { DayPendingTick(now); BedCheckTick(now); }, "day change"));
+            T("day", () => Clock.Try(() => { DayPendingTick(now); BedCheckTick(now); HoldGuestShift(now); }, "day change"));
             T("scares", () => Scares.Try(() => TuneDirector(now), "ambient scares"));
             T("Susanne", () => Susanne.Try(() => SusanneTick(now, dt), "Susanne"));
             T("respawn", () => Respawn.Try(() => RespawnTick(now), "respawn"));
@@ -514,8 +514,12 @@ namespace PlayroomsCoop
                 case Msg.DayTime:
                 {
                     var r = new Reader(buf, len, Protocol.HeaderSize);
+                    // older hosts dont send the day, -1 means unknown
+                    // int phase = r.I32(); float timer = r.F32();
+                    // Clock.Try(() => ApplyClock(phase, timer), "day clock");
                     int phase = r.I32(); float timer = r.F32();
-                    Clock.Try(() => ApplyClock(phase, timer), "day clock");
+                    int day = r.Remaining >= 4 ? r.I32() : -1;
+                    Clock.Try(() => ApplyClock(phase, timer, day), "day clock");
                     break;
                 }
             }
@@ -563,8 +567,12 @@ namespace PlayroomsCoop
         public static bool UnstuckPrefix(object __instance) => World.OnUnstuckButton(__instance);
         public static void ResetBallsPrefix(object __0, out List<(int idx, Vector3 pos)> __state) => __state = World.BallSpotsBefore(__0);
         public static void ResetBallsPostfix(object __0, List<(int idx, Vector3 pos)> __state) { World.SendResetBalls(__0, __state); World.RequestStrayRoomPass(__0); }
-        public static void HealBallsPrefix(object __0, out List<(int idx, Vector3 pos)> __state) => __state = World.BallSpotsBefore(__0);
-        public static void HealBallsPostfix(object __0, List<(int idx, Vector3 pos)> __state) => World.SendResetBalls(__0, __state, "[Balls] game unstuck");
+        // went with the whole room scan, too slow
+        // public static void HealBallsPrefix(object __0, out List<(int idx, Vector3 pos)> __state) => __state = World.BallSpotsBefore(__0);
+        // public static void HealBallsPostfix(object __0, List<(int idx, Vector3 pos)> __state) => World.SendResetBalls(__0, __state, "[Balls] game unstuck");
+        public static void GameHealPrefix() => World.GameHealStart();
+        public static void GameHealPostfix() => World.GameHealEnd();
+        public static void SpotMovedPostfix(object __0) => World.GameMovedSpot(__0);
         public static void DevicesHomePostfix(int __result) => World.SendDevicesHome(__result);
         public static bool RestartDayPrefix() => World.AllowRestartDay();
         public static void UnstuckCooldownPostfix(ref float __result) => World.OnUnstuckCooldown(ref __result);

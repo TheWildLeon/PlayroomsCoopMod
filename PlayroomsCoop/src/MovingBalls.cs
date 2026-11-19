@@ -128,9 +128,21 @@ namespace PlayroomsCoop
         private static int _puppetCursor;
         private static long _puppetFrame;
 
+        // balls other people move far from us skip the animation and just land
+        private const float FarBallRange = 21.7f;
+
+        private static bool TooFarToShow(Vector3 pos)
+        {
+            if (!Plugin.TrimFarAway.Value) return false;
+            var myHead = LocalHead;
+            if (myHead == null) return false;
+            return Dist(pos, myHead.Value) > FarBallRange;
+        }
+
         private static bool TryGlide(object spot, Vector3 from, Vector3 to, float now)
         {
             if (_puppets.Count >= MaxGlides || Dist(from, to) > 2.5f) return false;
+            if (TooFarToShow(to)) return false;
             IntPtr p = R.Ptr(spot);
             if (_puppets.ContainsKey(p) || _moving.ContainsKey(p)) return false;
             var pp = MakePuppet(spot, from);
@@ -208,6 +220,7 @@ namespace PlayroomsCoop
             float now = Time.realtimeSinceStartup;
             if (_mutedLive.TryGetValue(p, out float mutedUntil) && now < mutedUntil) return;
             if (!_puppets.ContainsKey(p) && LocalSweepNear(pos, now)) return;
+            if (!_puppets.ContainsKey(p) && TooFarToShow(pos)) return;
 
             if (!_puppets.TryGetValue(p, out var pp) || !Alive(pp.Ball) || !R.Same(R.Get(pp.Ball, "Owner"), spot))
             {
