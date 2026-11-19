@@ -1,0 +1,33 @@
+Copyright (c) 2026 TheWildLeon. All rights reserved.
+
+This covers all code and files in this repository and in the released mod
+files: Playrooms Co-op, Playrooms New Game+ and the Playrooms Patcher.
+
+No license is granted to copy, modify, redistribute or sell this code, in
+whole or in part, except as written below.
+
+You may:
+- Download the released mods and use them to play Playrooms.
+- Read the source code.
+- Build the source code unmodified, for your own personal use.
+
+You may not, without written permission from TheWildLeon:
+- Modify this code, or publish or share modified versions of it.
+- Copy this code, or any part of it, into another project.
+- Rewrite, translate or paraphrase this code (by hand, with tools or with AI)
+  and publish the result as your own.
+- Redistribute the code or the released files, including re-uploading them
+  to other sites.
+- Sell the code or the released files, or include them in any paid product,
+  installer or service.
+
+Viewing and forking this repository on GitHub is allowed only to the extent
+GitHub's Terms of Service require. A fork gives no further rights.
+
+BepInEx and the other third-party files included in the release downloads
+keep their own licenses, found in BepInEx\licenses.
+
+Playrooms and all of its content belong to Two Pixels UG. These mods are
+unofficial and not endorsed by Two Pixels UG.
+
+For permission requests, contact TheWildLeon on GitHub.

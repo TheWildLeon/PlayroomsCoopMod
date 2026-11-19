@@ -141,6 +141,12 @@ The log is at `BepInEx\LogOutput.log` in the game folder. If it contains `Playro
 
 Build steps are in `BUILD.txt`.
 
+## Copyright
+
+Copyright (c) 2026 TheWildLeon. All rights reserved.
+
+You're welcome to download the mods, play with them, read the source and build it unmodified for yourself. You may not modify, copy, rewrite, redistribute or sell this code or the released files without written permission. Full terms are in `LICENSE`.
+
 ## Disclaimer
 
 These mods are not endorsed by Two Pixels UG, the developers of Playrooms. They will not assist you in troubleshooting these mods, and they have no connection to the dev team. Please bring any issues up here so that I can fix them.
