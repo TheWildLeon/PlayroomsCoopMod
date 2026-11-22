@@ -204,6 +204,9 @@ namespace PlayroomsCoop
             R.Patch(R.T(ShovelT), "Sweep", 2, typeof(Hooks), nameof(Hooks.SweepPrefix), null);
             R.Patch(R.T("TwoPixels.Ball.BallVent"), "ConsumeIntoPit", 1, typeof(Hooks), nameof(Hooks.VentConsumePrefix), null);
             R.Patch(R.T("TwoPixels.Enemy.EnemyService"), "TriggerDeathFlow", 2, typeof(Hooks), nameof(Hooks.DeathPrefix), nameof(Hooks.DeathPostfix));
+            R.Patch(R.T("TwoPixels.Enemy.EnemyService"), "StandDownForNight", 0, typeof(Hooks), null, nameof(Hooks.StandDownPostfix));
+            R.Patch(R.T("TwoPixels.Enemy.EnemyService"), "ResumeNight", 0, typeof(Hooks), null, nameof(Hooks.ResumeNightPostfix));
+            R.Patch(R.T("TwoPixels.Enemy.EnemyService"), "BeginSpawnRetry", 0, typeof(Hooks), null, nameof(Hooks.SpawnRetryPostfix));
             UnstuckHooks();
             HelpMenuHooks();
             Shared.Hooks();
@@ -570,6 +573,9 @@ namespace PlayroomsCoop
         // went with the whole room scan, too slow
         // public static void HealBallsPrefix(object __0, out List<(int idx, Vector3 pos)> __state) => __state = World.BallSpotsBefore(__0);
         // public static void HealBallsPostfix(object __0, List<(int idx, Vector3 pos)> __state) => World.SendResetBalls(__0, __state, "[Balls] game unstuck");
+        public static void StandDownPostfix() => World.LogEntityEvent("entity stood down for the night");
+        public static void ResumeNightPostfix(bool __result) => World.LogEntityEvent(__result ? "night resumed, entity can come out again" : "night resume refused");
+        public static void SpawnRetryPostfix() => World.LogEntityEvent("entity not placed yet, retrying");
         public static void GameHealPrefix() => World.GameHealStart();
         public static void GameHealPostfix() => World.GameHealEnd();
         public static void SpotMovedPostfix(object __0) => World.GameMovedSpot(__0);

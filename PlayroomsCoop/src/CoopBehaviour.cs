@@ -632,7 +632,7 @@ namespace PlayroomsCoop
         private static object _ending;
         private static float _nextEndingSearch;
 
-        private static bool EndingIsPlaying()
+        internal static bool EndingIsPlaying()
         {
             float now = Time.realtimeSinceStartup;
             if (!World.Alive(_ending) && now >= _nextEndingSearch)

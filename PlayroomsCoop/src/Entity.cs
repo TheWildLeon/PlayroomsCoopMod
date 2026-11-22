@@ -85,9 +85,76 @@ namespace PlayroomsCoop
                     w.SendAll(SteamNet.SendUnreliable);
                 }
 
+                KeepNightForOthers(now);
                 if (!isOut) return;
                 UpdateTarget(enemy, now);
             }, "host entity");
+        }
+
+        // host in the clean room shouldnt cancel the entity for everyone else
+        private const float ResumeCheckEvery = 1.27f;
+        private static float _nextResumeCheck;
+
+        private static void KeepNightForOthers(float now)
+        {
+            if (now < _nextResumeCheck) return;
+            _nextResumeCheck = now + ResumeCheckEvery;
+
+            var es = EnemyService();
+            if (es == null) return;
+            if (!R.Get<bool>(es, "_standDown")) return;
+            if (R.Get<bool>(es, "_deathFlowActive")) return;
+            if (!NightIsRunning(now)) return;
+            if (CoopBehaviour.EndingIsPlaying()) return;
+
+            string stillOut = SomeoneStillOut();
+            if (stillOut == null) return;
+
+            bool resumed = Convert.ToBoolean(R.Call(es, "ResumeNight"));
+            if (resumed)
+            {
+                Plugin.Log.LogInfo($"[Entity] the game stood the entity down here, but {stillOut} is still out: bringing it back");
+                return;
+            }
+            Plugin.Log.LogInfo($"[Entity] tried to bring the entity back for {stillOut}, the game said no; trying again in a bit");
+            _nextResumeCheck = now + 15f;
+        }
+
+        private static string SomeoneStillOut()
+        {
+            foreach (var p in Net.Peers.Values)
+            {
+                if (!p.InWorld || p.Dead || p.Safe) continue;
+                return SteamNet.Plain(Net.NameOf(p.Id));
+            }
+            return null;
+        }
+
+        private static bool NightIsRunning(float now)
+        {
+            var dts = FindDayTime(now);
+            if (dts == null || !DayRunning(dts)) return false;
+            return Convert.ToInt32(R.Get(dts, "_phase")) == NightPhase;
+        }
+
+        private static bool IsSafeTarget(ulong id)
+        {
+            if (id == 0) return _localSafe;
+            return Net.Peers.TryGetValue(id, out var p) && p.Safe;
+        }
+
+        // what the game does with the entity, so reports show it in the log
+        private static string _lastEntityEvent;
+        private static float _lastEntityEventAt = -99f;
+
+        internal static void LogEntityEvent(string what)
+        {
+            float now = Time.realtimeSinceStartup;
+            if (what == _lastEntityEvent && now - _lastEntityEventAt < 3f) return;
+            _lastEntityEvent = what;
+            _lastEntityEventAt = now;
+            string where = _localSafe ? " (you're in the clean room)" : "";
+            Plugin.Log.LogInfo($"[Entity] game: {what}{where}");
         }
 
         private static ulong _targetPeer;
@@ -115,6 +182,14 @@ namespace PlayroomsCoop
                 if (_catchCool.TryGetValue(p.Id, out float until) && now < until) continue;
                 cand.Add((p.Id, new Vector3(p.Head.Value.x, p.Head.Value.y - offset, p.Head.Value.z)));
             }
+            // skip anyone safe while somebody is still out
+            bool someoneOutside = false;
+            foreach (var c in cand)
+            {
+                if (!IsSafeTarget(c.id)) { someoneOutside = true; break; }
+            }
+            if (someoneOutside) cand.RemoveAll(c => IsSafeTarget(c.id));
+
             if (_targetPeer != 0 && !cand.Exists(c => c.id == _targetPeer))
             {
                 Plugin.Log.LogInfo($"[Entity] {Net.NameOf(_targetPeer)} isn't in the world any more: back to hunting the host");
